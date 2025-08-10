@@ -1,0 +1,61 @@
+version: '3.8'
+services:
+  # OpenTelemetry Collector for Production
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.91.0
+    container_name: mobile-api-otel-collector-prod
+    command: ["--config=/etc/otel-collector-config.yml"]
+    volumes:
+      - ./otel/otel-collector-config.yml:/etc/otel-collector-config.yml
+    ports:
+      - "4317:4317"
+      - "4318:4318"
+      - "8889:8889"
+    environment:
+      - ENVIRONMENT=prod
+    networks:
+      - mobile-api-network
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+
+  # Mobile API Application - Production
+  mobile-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mobile-api-app-prod
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4318
+      - OTEL_SERVICE_NAME=mobile-api-prod
+      - OTEL_RESOURCE_ATTRIBUTES=service.name=mobile-api,service.version=1.0.0,deployment.environment=prod
+      - LOG_LEVEL=INFO
+      - JAVA_OPTS=-Xmx512m -Xms256m
+    depends_on:
+      - otel-collector
+    networks:
+      - mobile-api-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 768M
+        reservations:
+          memory: 512M
+
+networks:
+  mobile-api-network:
+    driver: bridge

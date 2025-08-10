@@ -1,0 +1,66 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+
+processors:
+  batch:
+    timeout: 1s
+    send_batch_size: 1024
+    send_batch_max_size: 2048
+
+  memory_limiter:
+    limit_mib: 128
+    check_interval: 1s
+
+  resource:
+    attributes:
+      - key: environment
+        value: local
+        action: insert
+      - key: service.namespace
+        value: mobile-api
+        action: insert
+
+exporters:
+  # Prometheus scrape endpoint for external Prometheus instances
+  prometheus:
+    endpoint: "0.0.0.0:8889"
+    const_labels:
+      service: mobile-api
+
+  # Prometheus Remote Write to external shared Prometheus (for production)
+  prometheusremotewrite:
+    endpoint: ${PROMETHEUS_REMOTE_WRITE_URL}
+    resource_to_telemetry_conversion:
+      enabled: true
+    target_info:
+      enabled: true
+    
+  # Console logging for debugging
+  logging:
+    loglevel: info
+
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, resource, batch]
+      exporters: [logging]
+
+    metrics:
+      receivers: [otlp]
+      processors: [memory_limiter, resource, batch]
+      exporters: [prometheus, logging]
+
+    logs:
+      receivers: [otlp]
+      processors: [memory_limiter, resource, batch]
+      exporters: [logging]
+
+  extensions: []

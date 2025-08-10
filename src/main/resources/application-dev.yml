@@ -1,0 +1,19 @@
+# Development environment
+spring:
+  application:
+    name: mobile-api-dev
+
+logging:
+  level:
+    com.mobileapi: DEBUG
+    org.springframework: INFO
+
+management:
+  tracing:
+    sampling:
+      probability: 0.5  # Sample 50% of traces
+
+otel:
+  exporter:
+    otlp:
+      endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:http://dev-otel-collector:4318}

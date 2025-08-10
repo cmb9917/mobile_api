@@ -1,0 +1,41 @@
+# Gradle
+.gradle/
+build/
+gradle-wrapper.jar
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo
+
+# Test reports
+reports/
+
+# JaCoCo
+*.exec
+
+# Docker volumes
+data/
+
+# Environment
+.env
+.env.local
+
+# Spring Boot
+# Note: application-*.yml files are included as they contain environment configurations

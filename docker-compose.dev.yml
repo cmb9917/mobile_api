@@ -1,0 +1,46 @@
+version: '3.8'
+services:
+  # OpenTelemetry Collector for Development
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.91.0
+    container_name: mobile-api-otel-collector-dev
+    command: ["--config=/etc/otel-collector-config.yml"]
+    volumes:
+      - ./otel/otel-collector-config.yml:/etc/otel-collector-config.yml
+    ports:
+      - "4317:4317"
+      - "4318:4318"
+      - "8889:8889"
+    environment:
+      - ENVIRONMENT=dev
+    networks:
+      - mobile-api-network
+
+  # Mobile API Application - Development
+  mobile-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mobile-api-app-dev
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4318
+      - OTEL_SERVICE_NAME=mobile-api-dev
+      - OTEL_RESOURCE_ATTRIBUTES=service.name=mobile-api,service.version=1.0.0,deployment.environment=dev
+      - LOG_LEVEL=DEBUG
+    depends_on:
+      - otel-collector
+    networks:
+      - mobile-api-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+networks:
+  mobile-api-network:
+    driver: bridge

@@ -1,0 +1,31 @@
+spring:
+  application:
+    name: mobile-api-test
+
+logging:
+  level:
+    com.mobileapi: DEBUG
+    org.springframework.web: INFO
+
+otel:
+  service:
+    name: mobile-api-test
+  exporter:
+    otlp:
+      endpoint: http://localhost:4318
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    export:
+      otlp:
+        enabled: false
+  tracing:
+    sampling:
+      probability: 0.0

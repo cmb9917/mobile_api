@@ -1,0 +1,211 @@
+spring:
+  application:
+    name: mobile-api
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:local}
+
+server:
+  port: ${SERVER_PORT:8080}
+  servlet:
+    context-path: /api
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+  tracing:
+    sampling:
+      probability: 1.0
+  otlp:
+    metrics:
+      export:
+        enabled: true
+        url: ${OTEL_EXPORTER_OTLP_ENDPOINT:http://localhost:4318}/v1/metrics
+        step: 5s
+
+otel:
+  service:
+    name: ${spring.application.name}
+  exporter:
+    otlp:
+      endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:http://localhost:4318}
+
+logging:
+  level:
+    com.mobileapi: ${LOG_LEVEL:INFO}
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level [%X{traceId},%X{spanId}] %logger{36} - %msg%n"
+
+# Resilience4J Configuration
+resilience4j:
+  circuitbreaker:
+    instances:
+      hello-service:
+        registerHealthIndicator: true
+        slidingWindowSize: 10
+        slidingWindowType: COUNT_BASED
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 50
+        waitDurationInOpenState: 30000
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+      hello-person-service:
+        registerHealthIndicator: true
+        slidingWindowSize: 10
+        slidingWindowType: COUNT_BASED
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 60
+        waitDurationInOpenState: 30000
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+      external-service:
+        registerHealthIndicator: true
+        slidingWindowSize: 20
+        slidingWindowType: COUNT_BASED
+        minimumNumberOfCalls: 10
+        failureRateThreshold: 40
+        waitDurationInOpenState: 60000
+        permittedNumberOfCallsInHalfOpenState: 5
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+
+  retry:
+    instances:
+      hello-service:
+        maxAttempts: 3
+        waitDuration: 1000
+        retryExceptions:
+          - java.lang.RuntimeException
+        ignoreExceptions:
+          - java.lang.IllegalArgumentException
+      hello-person-service:
+        maxAttempts: 2
+        waitDuration: 1500
+        retryExceptions:
+          - java.lang.RuntimeException
+        ignoreExceptions:
+          - java.lang.IllegalArgumentException
+      external-service:
+        maxAttempts: 4
+        waitDuration: 2000
+        exponentialBackoffMultiplier: 2
+        retryExceptions:
+          - java.lang.RuntimeException
+          - java.util.concurrent.TimeoutException
+
+  ratelimiter:
+    instances:
+      hello-service:
+        limitForPeriod: 50
+        limitRefreshPeriod: 60s
+        timeoutDuration: 3s
+      hello-person-service:
+        limitForPeriod: 30
+        limitRefreshPeriod: 60s
+        timeoutDuration: 3s
+
+  timelimiter:
+    instances:
+      external-service:
+        timeoutDuration: 3s
+        cancelRunningFuture: true
+
+  bulkhead:
+    instances:
+      external-service:
+        maxConcurrentCalls: 10
+        maxWaitDuration: 5s
+
+---
+spring:
+  config:
+    activate:
+      on-profile: local
+
+logging:
+  level:
+    com.mobileapi: DEBUG
+
+management:
+  tracing:
+    sampling:
+      probability: 1.0
+  otlp:
+    metrics:
+      export:
+        step: 5s
+
+---
+spring:
+  config:
+    activate:
+      on-profile: dev
+
+logging:
+  level:
+    com.mobileapi: DEBUG
+
+management:
+  tracing:
+    sampling:
+      probability: 0.5
+  otlp:
+    metrics:
+      export:
+        step: 10s
+
+otel:
+  exporter:
+    otlp:
+      endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:http://dev-otel-collector:4318}
+
+---
+spring:
+  config:
+    activate:
+      on-profile: staging
+
+logging:
+  level:
+    com.mobileapi: INFO
+
+management:
+  tracing:
+    sampling:
+      probability: 0.1
+  otlp:
+    metrics:
+      export:
+        step: 15s
+
+otel:
+  exporter:
+    otlp:
+      endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:http://staging-otel-collector:4318}
+
+---
+spring:
+  config:
+    activate:
+      on-profile: prod
+
+logging:
+  level:
+    com.mobileapi: INFO
+
+management:
+  tracing:
+    sampling:
+      probability: 0.01
+  otlp:
+    metrics:
+      export:
+        step: 30s
+
+otel:
+  exporter:
+    otlp:
+      endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:http://prod-otel-collector:4318}

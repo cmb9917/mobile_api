@@ -1,0 +1,44 @@
+version: '3.8'
+services:
+  # OpenTelemetry Collector for Local Development
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.91.0
+    container_name: mobile-api-otel-collector-local
+    command: ["--config=/etc/otel-collector-config.yml"]
+    volumes:
+      - ./otel/otel-collector-config.yml:/etc/otel-collector-config.yml
+    ports:
+      - "4317:4317"   # OTLP gRPC receiver
+      - "4318:4318"   # OTLP HTTP receiver
+      - "8889:8889"   # Prometheus metrics scrape endpoint
+    networks:
+      - mobile-api-network
+
+  # Mobile API Application - Local
+  mobile-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mobile-api-app-local
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=local
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4318
+      - OTEL_SERVICE_NAME=mobile-api-local
+      - OTEL_RESOURCE_ATTRIBUTES=service.name=mobile-api,service.version=1.0.0,deployment.environment=local
+      - LOG_LEVEL=DEBUG
+    depends_on:
+      - otel-collector
+    networks:
+      - mobile-api-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+networks:
+  mobile-api-network:
+    driver: bridge

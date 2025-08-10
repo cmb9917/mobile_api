@@ -1,0 +1,19 @@
+# Local development environment
+spring:
+  application:
+    name: mobile-api-local
+
+logging:
+  level:
+    com.mobileapi: DEBUG
+    org.springframework: INFO
+
+management:
+  tracing:
+    sampling:
+      probability: 1.0  # Sample all traces for local development
+
+otel:
+  exporter:
+    otlp:
+      endpoint: http://localhost:4318

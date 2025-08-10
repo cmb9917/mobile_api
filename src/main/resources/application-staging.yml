@@ -1,0 +1,19 @@
+# Staging environment
+spring:
+  application:
+    name: mobile-api-staging
+
+logging:
+  level:
+    com.mobileapi: INFO
+    org.springframework: WARN
+
+management:
+  tracing:
+    sampling:
+      probability: 0.1  # Sample 10% of traces
+
+otel:
+  exporter:
+    otlp:
+      endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:http://staging-otel-collector:4318}

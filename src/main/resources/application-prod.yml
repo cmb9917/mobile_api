@@ -1,0 +1,20 @@
+# Production environment
+spring:
+  application:
+    name: mobile-api-prod
+
+logging:
+  level:
+    com.mobileapi: INFO
+    org.springframework: WARN
+    org.apache: WARN
+
+management:
+  tracing:
+    sampling:
+      probability: 0.01  # Sample 1% of traces for production
+
+otel:
+  exporter:
+    otlp:
+      endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:http://prod-otel-collector:4318}
