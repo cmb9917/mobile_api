@@ -351,4 +351,3 @@ Access monitoring:
 - **Grafana**: Access through your external monitoring infrastructure
 - **Traces**: Available in OTEL collector logs for debugging
 
-
