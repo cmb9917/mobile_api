@@ -39,3 +39,6 @@ data/
 
 # Spring Boot
 # Note: application-*.yml files are included as they contain environment configurations
+
+# Gradle distribution
+gradle.zip
